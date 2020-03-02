@@ -33,70 +33,61 @@ var app = {
     // The scope of 'this' is the event. In order to call the 'receivedEvent'
     // function, we must explicitly call 'app.receivedEvent(...);'
     onDeviceReady: function() {
-		Fingerprint.isAvailable(isAvailableSuccess, isAvailableError);
+		// Check if device supports fingerprint
+/**
+* @return {
+*      isAvailable:boolean,
+*      isHardwareDetected:boolean,
+*      hasEnrolledFingerprints:boolean
+*   }
+*/
+FingerprintAuth.isAvailable(function (result) {
 
-    function isAvailableSuccess(result) {
-      /*
-      result depends on device and os. 
-      iPhone X will return 'face' other Android or iOS devices will return 'finger'  
-      */
-      alert("Fingerprint available");
-    }
+    console.log("FingerprintAuth available: " + JSON.stringify(result));
+    
+    // If has fingerprint device and has fingerprints registered
+    if (result.isAvailable == true && result.hasEnrolledFingerprints == true) {
 
-    function isAvailableError(error) {
-      // 'error' will be an object with an error code and message
-      alert(error.message);
-    }
-        console.log('Received Device Ready Event');
-        console.log('calling setup push');
-        app.setupPush();
-    },
-    setupPush: function() {
-        console.log('calling push init');
-        var push = PushNotification.init({
-            "android": {
-                "senderID": "XXXXXXXX"
-            },
-            "browser": {},
-            "ios": {
-                "sound": true,
-                "vibration": true,
-                "badge": true
-            },
-            "windows": {}
-        });
-        console.log('after init');
+        // Check the docs to know more about the encryptConfig object :)
+        var encryptConfig = {
+            clientId: "myAppName",
+            username: "currentUser",
+            password: "currentUserPassword",
+            maxAttempts: 5,
+            locale: "en_US",
+            dialogTitle: "Hey dude, your finger",
+            dialogMessage: "Put your finger on the device",
+            dialogHint: "No one will steal your identity, promised"
+        }; // See config object for required parameters
 
-        push.on('registration', function(data) {
-            console.log('registration event: ' + data.registrationId);
-
-            var oldRegId = localStorage.getItem('registrationId');
-            if (oldRegId !== data.registrationId) {
-                // Save new registration ID
-                localStorage.setItem('registrationId', data.registrationId);
-                // Post registrationId to your app server as the value has changed
+        // Set config and success callback
+        FingerprintAuth.encrypt(encryptConfig, function(_fingerResult){
+            console.log("successCallback(): " + JSON.stringify(_fingerResult));
+            if (_fingerResult.withFingerprint) {
+                console.log("Successfully encrypted credentials.");
+                console.log("Encrypted credentials: " + result.token);  
+            } else if (_fingerResult.withBackup) {
+                console.log("Authenticated with backup password");
             }
-
-            var parentElement = document.getElementById('registration');
-            var listeningElement = parentElement.querySelector('.waiting');
-            var receivedElement = parentElement.querySelector('.received');
-
-            listeningElement.setAttribute('style', 'display:none;');
-            receivedElement.setAttribute('style', 'display:block;');
+        // Error callback
+        }, function(err){
+                if (err === "Cancelled") {
+                console.log("FingerprintAuth Dialog Cancelled!");
+            } else {
+                console.log("FingerprintAuth Error: " + err);
+            }
         });
-
-        push.on('error', function(e) {
-            console.log("push error = " + e.message);
-        });
-
-        push.on('notification', function(data) {
-            console.log('notification event');
-            navigator.notification.alert(
-                data.message,         // message
-                null,                 // callback
-                data.title,           // title
-                'Ok'                  // buttonName
-            );
-       });
     }
+
+/**
+* @return {
+*      isAvailable:boolean,
+*      isHardwareDetected:boolean,
+*      hasEnrolledFingerprints:boolean
+*   }
+*/
+}, function (message) {
+    console.log("isAvailableError(): " + message);
+});
+		
 };
