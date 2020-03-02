@@ -90,5 +90,26 @@ FingerprintAuth.isAvailable(function (result) {
 }, function (message) {
     console.log("isAvailableError(): " + message);
 });
-		
+FingerprintAuth.decrypt(decryptConfig, successCallback, errorCallback);
+
+function successCallback(result) {
+    console.log("successCallback(): " + JSON.stringify(result));
+    if (result.withFingerprint) {
+        console.log("Successful biometric authentication.");
+        if (result.password) {
+            console.log("Successfully decrypted credential token.");
+            console.log("password: " + result.password);  
+        }
+    } else if (result.withBackup) {
+        console.log("Authenticated with backup password");
+    }
+}
+
+function errorCallback(error) {
+    if (error === FingerprintAuth.ERRORS.FINGERPRINT_CANCELLED) {
+        console.log("FingerprintAuth Dialog Cancelled!");
+    } else {
+        console.log("FingerprintAuth Error: " + error);
+    }
+}		
 };
